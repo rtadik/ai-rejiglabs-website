@@ -1,0 +1,258 @@
+/**
+ * AI Rejig Labs — Case Studies Module
+ * Renders card grids and full case study pages from data/case-studies.json
+ *
+ * Usage:
+ *   Card grid:  <div class="case-studies" data-limit="3"></div>
+ *   Full page:  <div id="case-study-page"></div>  (reads ?slug= from URL)
+ */
+(() => {
+  'use strict';
+
+  // Resolve path to JSON relative to this script's location
+  const scripts = document.querySelectorAll('script[src]');
+  let basePath = '';
+  for (let i = 0; i < scripts.length; i++) {
+    const src = scripts[i].getAttribute('src');
+    if (src && src.indexOf('case-studies.js') !== -1) {
+      basePath = src.replace(/js\/case-studies\.js.*$/, '');
+      break;
+    }
+  }
+  const DATA_URL = basePath + 'data/case-studies.json';
+
+  // Cache
+  let _data = null;
+
+  function fetchData() {
+    if (_data) return Promise.resolve(_data);
+    return fetch(DATA_URL)
+      .then(function (r) { return r.json(); })
+      .then(function (d) { _data = d; return d; });
+  }
+
+  // ---- Evervault-style random string ----
+
+  var CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  function randomString(len) {
+    var r = '';
+    for (var i = 0; i < len; i++) r += CHARS.charAt(Math.floor(Math.random() * CHARS.length));
+    return r;
+  }
+
+  function initEvervaultCards(container) {
+    var panels = container.querySelectorAll('.ev-card');
+    panels.forEach(function (panel) {
+      var chars = panel.querySelector('.ev-card__chars');
+      var reveal = panel.querySelector('.ev-card__reveal');
+
+      // Fill initial chars
+      chars.textContent = randomString(800);
+
+      panel.addEventListener('mousemove', function (e) {
+        var rect = panel.getBoundingClientRect();
+        var x = e.clientX - rect.left;
+        var y = e.clientY - rect.top;
+        reveal.style.background = 'radial-gradient(250px at ' + x + 'px ' + y + 'px, rgba(0,85,255,0.45), transparent)';
+        chars.style.WebkitMaskImage = 'radial-gradient(200px at ' + x + 'px ' + y + 'px, white, transparent)';
+        chars.style.maskImage = 'radial-gradient(200px at ' + x + 'px ' + y + 'px, white, transparent)';
+        chars.textContent = randomString(800);
+      });
+
+      panel.addEventListener('mouseleave', function () {
+        reveal.style.background = 'transparent';
+        chars.style.WebkitMaskImage = 'none';
+        chars.style.maskImage = 'none';
+      });
+    });
+  }
+
+  // ---- i18n helper ----
+  function lang() {
+    return (window.__i18n && window.__i18n.getLang) ? window.__i18n.getLang() : 'en';
+  }
+  // Pick translated field if available, fallback to English
+  function t(cs, field) {
+    var l = lang();
+    if (l !== 'en' && cs[field + '_' + l]) return cs[field + '_' + l];
+    return cs[field];
+  }
+  function tStat(s) {
+    var l = lang();
+    if (l !== 'en' && s['label_' + l]) return s['label_' + l];
+    return s.label;
+  }
+  var readText = { en: 'Read Case Study', th: 'ดูรายละเอียด', ru: 'Подробнее' };
+
+  // ---- Card Grid ----
+
+  function renderCard(cs) {
+    var l = lang();
+    var statsHtml = cs.stats.map(function (s) {
+      return '<div class="cs-card__stat"><span class="cs-card__stat-val">' + s.value + '</span><span class="cs-card__stat-label">' + tStat(s) + '</span></div>';
+    }).join('');
+
+    return '<a href="case-study.html?slug=' + cs.slug + '" class="cs-card" data-cs-card>' +
+      '<div class="ev-card">' +
+        '<div class="ev-card__chars"></div>' +
+        '<div class="ev-card__reveal"></div>' +
+        '<div class="ev-card__logo"><img src="' + basePath + 'assets/logo.png" alt="AI Rejig Labs"></div>' +
+      '</div>' +
+      '<div class="cs-card__body">' +
+        '<span class="cs-card__tag">' + (t(cs, 'industry') || cs.industry) + '</span>' +
+        '<h3 class="cs-card__title">' + cs.client + ' <span class="cs-card__sep">|</span> ' + t(cs, 'headline') + '</h3>' +
+        '<p class="cs-card__summary">' + t(cs, 'summary') + '</p>' +
+        '<div class="cs-card__stats">' + statsHtml + '</div>' +
+        '<span class="cs-card__link">' + (readText[l] || readText.en) + ' <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></span>' +
+      '</div>' +
+    '</a>';
+  }
+
+  function renderGrid(container) {
+    fetchData().then(function (studies) {
+      var published = studies.filter(function (s) { return s.published; });
+      var limit = parseInt(container.getAttribute('data-limit')) || published.length;
+      var items = published.slice(0, limit);
+
+      var html = '<div class="cs-grid">' + items.map(renderCard).join('') + '</div>';
+      container.innerHTML = html;
+
+      // Init evervault hover effect
+      initEvervaultCards(container);
+
+      // Trigger entrance animations after render
+      requestAnimationFrame(function () {
+        var cards = container.querySelectorAll('[data-cs-card]');
+        var observer = new IntersectionObserver(function (entries) {
+          entries.forEach(function (entry) {
+            if (!entry.isIntersecting) return;
+            var idx = Array.from(cards).indexOf(entry.target);
+            setTimeout(function () { entry.target.classList.add('in-view'); }, idx * 120);
+            observer.unobserve(entry.target);
+          });
+        }, { threshold: 0.1 });
+        cards.forEach(function (c) { observer.observe(c); });
+      });
+    });
+  }
+
+  // ---- Full Page ----
+
+  function renderFullPage(container) {
+    var params = new URLSearchParams(window.location.search);
+    var slug = params.get('slug');
+
+    if (!slug) {
+      container.innerHTML = '<div class="cs-page__not-found"><h2>Case study not found</h2><p>No case study specified.</p><a href="index.html#case-studies" class="btn"><span class="btn__text">Back to Home</span><span class="btn__hover">Back to Home</span><span class="btn__fill"></span></a></div>';
+      return;
+    }
+
+    fetchData().then(function (studies) {
+      var cs = null;
+      for (var i = 0; i < studies.length; i++) {
+        if (studies[i].slug === slug && studies[i].published) { cs = studies[i]; break; }
+      }
+
+      if (!cs) {
+        var safeSlug = slug.replace(/[<>"'&]/g, function(c) { return '&#' + c.charCodeAt(0) + ';'; });
+        container.innerHTML = '<div class="cs-page__not-found"><h2>Case study not found</h2><p>We couldn\'t find a case study matching "' + safeSlug + '".</p><a href="index.html#case-studies" class="btn"><span class="btn__text">Back to Home</span><span class="btn__hover">Back to Home</span><span class="btn__fill"></span></a></div>';
+        return;
+      }
+
+      // Update page title
+      document.title = cs.client + ' | Case Study | AI Rejig Labs';
+
+      var l = lang();
+      var statsHtml = cs.stats.map(function (s) {
+        return '<div class="cs-page__stat"><span class="cs-page__stat-val">' + s.value + '</span><span class="cs-page__stat-label">' + tStat(s) + '</span></div>';
+      }).join('');
+
+      // i18n labels for section headers
+      var labels = {
+        challenge: { en: 'The Challenge', th: 'ความท้าทาย', ru: 'Проблема' },
+        solution: { en: 'What We Built', th: 'สิ่งที่เราสร้าง', ru: 'Что мы сделали' },
+        results: { en: 'The Results', th: 'ผลลัพธ์', ru: 'Результаты' },
+        cta: { en: 'Ready to see results <em class="accent">like this?</em>', th: 'พร้อมเห็นผลลัพธ์<em class="accent">แบบนี้</em>ไหม?', ru: 'Хотите <em class="accent">такие же результаты?</em>' },
+        more: { en: 'More <em class="accent">Case Studies</em>', th: 'ผลงาน<em class="accent">อื่น ๆ</em>', ru: 'Ещё <em class="accent">кейсы</em>' },
+        back: { en: 'Back', th: 'กลับ', ru: 'Назад' },
+        book: { en: 'Book a Discovery Call', th: 'นัดคุยฟรี', ru: 'Записаться на консультацию' }
+      };
+      function lb(key) { return labels[key][l] || labels[key].en; }
+
+      // Get other case studies for "More Case Studies" section
+      var others = studies.filter(function (s) { return s.published && s.slug !== slug; }).slice(0, 2);
+      var othersHtml = '';
+      if (others.length > 0) {
+        othersHtml = '<section class="cs-page__more"><h2>' + lb('more') + '</h2><div class="cs-grid cs-grid--2">' + others.map(renderCard).join('') + '</div></section>';
+      }
+
+      container.innerHTML =
+        '<a href="index.html#case-studies" class="cs-page__back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg> ' + lb('back') + '</a>' +
+
+        '<section class="cs-page__hero">' +
+          '<span class="cs-card__tag">' + t(cs, 'industry') + '</span>' +
+          '<h1>' + cs.client + ' <span class="cs-card__sep">|</span> <em class="accent">' + t(cs, 'headline') + '</em></h1>' +
+          '<p class="cs-page__hero-summary">' + t(cs, 'summary') + '</p>' +
+          '<div class="cs-page__stats">' + statsHtml + '</div>' +
+        '</section>' +
+
+        '<div class="cs-page__image"><img src="' + cs.image + '" alt="' + cs.client + '"></div>' +
+
+        '<section class="cs-page__section">' +
+          '<div class="cs-page__section-label">' + lb('challenge') + '</div>' +
+          '<p>' + t(cs, 'challenge') + '</p>' +
+        '</section>' +
+
+        '<section class="cs-page__section">' +
+          '<div class="cs-page__section-label">' + lb('solution') + '</div>' +
+          '<p>' + t(cs, 'solution') + '</p>' +
+        '</section>' +
+
+        '<section class="cs-page__section">' +
+          '<div class="cs-page__section-label">' + lb('results') + '</div>' +
+          '<p>' + t(cs, 'results') + '</p>' +
+        '</section>' +
+
+        (cs.testimonial ? '<section class="cs-page__testimonial"><span class="cs-page__tst-mark">"</span><blockquote>' + (t(cs.testimonial, 'quote') || cs.testimonial.quote) + '</blockquote><cite>' + cs.testimonial.name + ', ' + cs.testimonial.title + '</cite></section>' : '') +
+
+        '<section class="cs-page__cta">' +
+          '<h2>' + lb('cta') + '</h2>' +
+          '<button data-cal-namespace="discovery" data-cal-link="rejiglabs/discovery" data-cal-config=\'{"layout":"month_view"}\' class="btn btn--filled"><span class="btn__text">' + lb('book') + '</span><span class="btn__hover">' + lb('book') + ' <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></span><span class="btn__fill"></span></button>' +
+        '</section>' +
+
+        othersHtml;
+
+      // Init evervault on "more case studies" cards
+      requestAnimationFrame(function () {
+        initEvervaultCards(container);
+        // Make cards visible immediately on full page
+        container.querySelectorAll('[data-cs-card]').forEach(function (c) {
+          c.classList.add('in-view');
+        });
+      });
+    });
+  }
+
+  // ---- Init ----
+
+  function renderAll() {
+    // Render all card grids on the page
+    var grids = document.querySelectorAll('.case-studies');
+    grids.forEach(function (g) { renderGrid(g); });
+
+    // Render full page if container exists
+    var page = document.getElementById('case-study-page');
+    if (page) renderFullPage(page);
+  }
+
+  document.addEventListener('DOMContentLoaded', function () {
+    renderAll();
+
+    // Re-render when language changes
+    if (window.__i18n && window.__i18n.onChange) {
+      window.__i18n.onChange(function () {
+        renderAll();
+      });
+    }
+  });
+})();
