@@ -232,19 +232,18 @@
     requestAnimationFrame(tick);
   }
 
-  // Enable pointer events on waves for mouse interaction
+  // Enable pointer events on waves for mouse interaction (desktop only)
+  var isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
   var wavesDiv = document.getElementById('heroWaves');
-  if (wavesDiv) wavesDiv.style.pointerEvents = 'auto';
+  if (wavesDiv && !isTouchDevice) wavesDiv.style.pointerEvents = 'auto';
 
   setSize();
   setLines();
 
   window.addEventListener('resize', onResize);
-  window.addEventListener('mousemove', function (e) { updateMouse(e.pageX, e.pageY); });
-  container.addEventListener('touchmove', function (e) {
-    e.preventDefault();
-    updateMouse(e.touches[0].clientX, e.touches[0].clientY);
-  }, { passive: false });
+  if (!isTouchDevice) {
+    window.addEventListener('mousemove', function (e) { updateMouse(e.pageX, e.pageY); });
+  }
 
   requestAnimationFrame(tick);
 })();
