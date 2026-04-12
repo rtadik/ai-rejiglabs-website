@@ -37,10 +37,8 @@
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
-
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+  <link rel="preload" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Inter:wght@300;400;500&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Inter:wght@300;400;500&display=swap" rel="stylesheet"></noscript>
 
   <link rel="stylesheet" href="css/style.css">
 </head>
@@ -49,7 +47,7 @@
   <!-- NAV -->
   <nav class="nav" id="nav">
     <a href="#" class="nav__logo">
-      <img src="assets/logo.png" class="nav__logomark" alt="RL">
+      <img src="assets/logo-sm.png" class="nav__logomark" alt="RL" width="32" height="26" fetchpriority="high">
       <span>AI Rejig Labs</span>
     </a>
     <div class="nav__links">
@@ -92,16 +90,16 @@
         <p class="eyebrow" data-i18n="hero_trusted">TRUSTED BY BUSINESSES ACROSS INDUSTRIES</p>
         <div class="trusted__track-wrap">
           <div class="trusted__track">
-            <img src="https://upload.wikimedia.org/wikipedia/commons/2/2f/Google_2015_logo.svg" alt="Google">
-            <img src="https://upload.wikimedia.org/wikipedia/commons/a/a9/Amazon_logo.svg" alt="Amazon">
-            <img src="https://upload.wikimedia.org/wikipedia/commons/9/96/Microsoft_logo_%282012%29.svg" alt="Microsoft">
-            <img src="https://upload.wikimedia.org/wikipedia/commons/f/fa/Apple_logo_black.svg" alt="Apple">
-            <img src="https://upload.wikimedia.org/wikipedia/commons/0/08/Netflix_2015_logo.svg" alt="Netflix">
-            <img src="https://upload.wikimedia.org/wikipedia/commons/2/2f/Google_2015_logo.svg" alt="Google">
-            <img src="https://upload.wikimedia.org/wikipedia/commons/a/a9/Amazon_logo.svg" alt="Amazon">
-            <img src="https://upload.wikimedia.org/wikipedia/commons/9/96/Microsoft_logo_%282012%29.svg" alt="Microsoft">
-            <img src="https://upload.wikimedia.org/wikipedia/commons/f/fa/Apple_logo_black.svg" alt="Apple">
-            <img src="https://upload.wikimedia.org/wikipedia/commons/0/08/Netflix_2015_logo.svg" alt="Netflix">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/2/2f/Google_2015_logo.svg" alt="Google" loading="lazy">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/a/a9/Amazon_logo.svg" alt="Amazon" loading="lazy">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/9/96/Microsoft_logo_%282012%29.svg" alt="Microsoft" loading="lazy">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/f/fa/Apple_logo_black.svg" alt="Apple" loading="lazy">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/0/08/Netflix_2015_logo.svg" alt="Netflix" loading="lazy">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/2/2f/Google_2015_logo.svg" alt="Google" loading="lazy">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/a/a9/Amazon_logo.svg" alt="Amazon" loading="lazy">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/9/96/Microsoft_logo_%282012%29.svg" alt="Microsoft" loading="lazy">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/f/fa/Apple_logo_black.svg" alt="Apple" loading="lazy">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/0/08/Netflix_2015_logo.svg" alt="Netflix" loading="lazy">
           </div>
         </div>
       </div>
@@ -136,7 +134,7 @@
     <section class="process" id="process">
       <div class="process__top-line"></div>
       <div class="process__header">
-        <img src="assets/logo.png" class="process__logo" alt="RL">
+        <img src="assets/logo-sm.png" class="process__logo" alt="RL" width="60" height="49" loading="lazy">
         <h2 data-i18n-html="process_h2">Every engagement follows <em class="accent">three steps…</em></h2>
       </div>
 
@@ -234,15 +232,15 @@
         <!-- Avatars -->
         <div class="tst__avatars" id="tstAvatars">
           <button class="tst__avatar-btn active" data-tst-index="0">
-            <img src="https://images.unsplash.com/photo-1560250097-0b93528c311a?w=100&h=100&fit=crop&crop=face" alt="BoBe">
+            <img src="https://images.unsplash.com/photo-1560250097-0b93528c311a?w=100&h=100&fit=crop&crop=face" alt="BoBe" loading="lazy">
             <span class="tst__name">BoBe</span>
           </button>
           <button class="tst__avatar-btn" data-tst-index="1">
-            <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=100&h=100&fit=crop&crop=face" alt="Sarah Chen">
+            <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=100&h=100&fit=crop&crop=face" alt="Sarah Chen" loading="lazy">
             <span class="tst__name">Sarah Chen</span>
           </button>
           <button class="tst__avatar-btn" data-tst-index="2">
-            <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face" alt="Marcus Johnson">
+            <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face" alt="Marcus Johnson" loading="lazy">
             <span class="tst__name">Marcus Johnson</span>
           </button>
         </div>
@@ -393,7 +391,7 @@
       </div>
       <div class="footer__inner">
         <div class="footer__brand">
-          <img src="assets/logo.png" alt="AI Rejig Labs" class="footer__logo">
+          <img src="assets/logo-sm.png" alt="AI Rejig Labs" class="footer__logo" width="40" height="33" loading="lazy">
           <span>AI Rejig Labs</span>
         </div>
         <p>© 2026 AI Rejig Labs · An arm of Rejig Labs · Thailand · <a href="privacy.html">Privacy</a> · <a href="terms.html">Terms</a></p>
@@ -414,6 +412,8 @@
     </div>
   </footer>
 
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
   <script src="js/waves.js"></script>
   <script src="js/case-studies.js"></script>
   <script src="js/i18n.js"></script>
