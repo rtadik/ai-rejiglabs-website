@@ -173,17 +173,18 @@
 
   /* =============================================
      PROCESS — scroll-scrubbed morphing geometry
+     Optimised: will-change + composited transforms only
   ============================================= */
   document.querySelectorAll('.process__morph').forEach(function (morph) {
     var shapes = morph.querySelectorAll('.morph-shape');
     var step = morph.closest('.process__step');
 
-    // Set initial state with GSAP for proper SVG transform
+    // Promote shapes to GPU layer to avoid forced reflows on scroll
     shapes.forEach(function (shape) {
+      shape.style.willChange = 'transform, opacity';
       gsap.set(shape, { scale: 0, opacity: 0, svgOrigin: '100 100' });
     });
 
-    // Create a timeline scrubbed by scroll
     var tl = gsap.timeline({
       scrollTrigger: {
         trigger: step,
@@ -279,96 +280,112 @@
 
   /* =============================================
      STATS — slide up + count-up
+     Deferred via requestIdleCallback (non-critical)
   ============================================= */
-  const statItems = document.querySelectorAll('.dot-card');
-  const statObserver = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-      if (!entry.isIntersecting) return;
-      const idx = Array.from(statItems).indexOf(entry.target);
-      setTimeout(() => entry.target.classList.add('in-view'), idx * 100);
-      statObserver.unobserve(entry.target);
-    });
-  }, { threshold: 0.2 });
-  statItems.forEach(s => statObserver.observe(s));
+  const initStats = () => {
+    const statItems = document.querySelectorAll('.dot-card');
+    const statObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (!entry.isIntersecting) return;
+        const idx = Array.from(statItems).indexOf(entry.target);
+        setTimeout(() => entry.target.classList.add('in-view'), idx * 100);
+        statObserver.unobserve(entry.target);
+      });
+    }, { threshold: 0.2 });
+    statItems.forEach(s => statObserver.observe(s));
 
-  /* Count-up */
-  const countEls = document.querySelectorAll('.count');
-  const countObserver = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-      if (!entry.isIntersecting) return;
-      const el = entry.target;
-      const target = +el.dataset.target;
-      const dur = 1400;
-      const t0 = performance.now();
-      const tick = now => {
-        const p = Math.min((now - t0) / dur, 1);
-        const e = 1 - Math.pow(1 - p, 3);
-        el.textContent = Math.round(e * target);
-        if (p < 1) requestAnimationFrame(tick);
-      };
-      requestAnimationFrame(tick);
-      countObserver.unobserve(el);
-    });
-  }, { threshold: 0.5 });
-  countEls.forEach(el => countObserver.observe(el));
+    /* Count-up */
+    const countEls = document.querySelectorAll('.count');
+    const countObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (!entry.isIntersecting) return;
+        const el = entry.target;
+        const target = +el.dataset.target;
+        const dur = 1400;
+        const t0 = performance.now();
+        const tick = now => {
+          const p = Math.min((now - t0) / dur, 1);
+          const e = 1 - Math.pow(1 - p, 3);
+          el.textContent = Math.round(e * target);
+          if (p < 1) requestAnimationFrame(tick);
+        };
+        requestAnimationFrame(tick);
+        countObserver.unobserve(el);
+      });
+    }, { threshold: 0.5 });
+    countEls.forEach(el => countObserver.observe(el));
+  };
 
   /* =============================================
      FAQ — slide in from left, staggered
+     Deferred via requestIdleCallback (non-critical)
   ============================================= */
-  const faqItems = document.querySelectorAll('.faq__item');
-  const faqObserver = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-      if (!entry.isIntersecting) return;
-      const idx = Array.from(faqItems).indexOf(entry.target);
-      setTimeout(() => entry.target.classList.add('in-view'), idx * 70);
-      faqObserver.unobserve(entry.target);
-    });
-  }, { threshold: 0.1 });
-  faqItems.forEach(f => faqObserver.observe(f));
-
-  gsap.from('.faq__header > *', {
-    scrollTrigger: { trigger: '.faq__header', start: 'top 70%' },
-    y: 24, opacity: 0, duration: 0.7, stagger: 0.14, ease,
-  });
-
-  /* =============================================
-     CLOSING — staggered line-by-line reveal
-  ============================================= */
-  const closingLines = document.querySelectorAll('.closing__line');
-  const closingObserver = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-      if (!entry.isIntersecting) return;
-      // Trigger all lines with stagger
-      closingLines.forEach((line, idx) => {
-        setTimeout(() => line.classList.add('in-view'), idx * 300);
+  const initFaq = () => {
+    const faqItems = document.querySelectorAll('.faq__item');
+    const faqObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (!entry.isIntersecting) return;
+        const idx = Array.from(faqItems).indexOf(entry.target);
+        setTimeout(() => entry.target.classList.add('in-view'), idx * 70);
+        faqObserver.unobserve(entry.target);
       });
-      closingObserver.unobserve(entry.target);
-    });
-  }, { threshold: 0.3 });
-  closingObserver.observe(document.querySelector('.closing-footer'));
+    }, { threshold: 0.1 });
+    faqItems.forEach(f => faqObserver.observe(f));
 
-  gsap.from('.closing__btn-wrap', {
-    scrollTrigger: {
-      trigger: '.closing-footer',
-      start: 'top 55%',
-      onEnter: function () {
-        // Delay circle draw until button has faded in
-        setTimeout(function () {
-          var wrap = document.getElementById('closingBtnWrap');
-          if (wrap) wrap.classList.add('animate');
-        }, 1400);
-      }
-    },
-    y: 20, opacity: 0, duration: 0.7, delay: 1.2, ease,
-  });
+    gsap.from('.faq__header > *', {
+      scrollTrigger: { trigger: '.faq__header', start: 'top 70%' },
+      y: 24, opacity: 0, duration: 0.7, stagger: 0.14, ease,
+    });
+  };
 
   /* =============================================
-     FOOTER — fade up
+     CLOSING + FOOTER
+     Deferred via requestIdleCallback (non-critical)
   ============================================= */
-  gsap.from('.footer__inner > *', {
-    scrollTrigger: { trigger: '.footer', start: 'top 85%' },
-    y: 16, opacity: 0, duration: 0.6, stagger: 0.1, ease,
-  });
+  const initClosing = () => {
+    const closingLines = document.querySelectorAll('.closing__line');
+    const closingObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (!entry.isIntersecting) return;
+        closingLines.forEach((line, idx) => {
+          setTimeout(() => line.classList.add('in-view'), idx * 300);
+        });
+        closingObserver.unobserve(entry.target);
+      });
+    }, { threshold: 0.3 });
+    closingObserver.observe(document.querySelector('.closing-footer'));
+
+    gsap.from('.closing__btn-wrap', {
+      scrollTrigger: {
+        trigger: '.closing-footer',
+        start: 'top 55%',
+        onEnter: function () {
+          setTimeout(function () {
+            var wrap = document.getElementById('closingBtnWrap');
+            if (wrap) wrap.classList.add('animate');
+          }, 1400);
+        }
+      },
+      y: 20, opacity: 0, duration: 0.7, delay: 1.2, ease,
+    });
+
+    gsap.from('.footer__inner > *', {
+      scrollTrigger: { trigger: '.footer', start: 'top 85%' },
+      y: 16, opacity: 0, duration: 0.6, stagger: 0.1, ease,
+    });
+  };
+
+  // Defer non-critical below-fold setup until browser is idle
+  if ('requestIdleCallback' in window) {
+    requestIdleCallback(initStats, { timeout: 2000 });
+    requestIdleCallback(initFaq,   { timeout: 2000 });
+    requestIdleCallback(initClosing, { timeout: 2000 });
+  } else {
+    // Fallback for Safari
+    setTimeout(initStats,   200);
+    setTimeout(initFaq,     200);
+    setTimeout(initClosing, 200);
+  }
 
   /* =============================================
      FAQ ACCORDION
@@ -384,12 +401,12 @@
 
   /* =============================================
      ENTROPY — particle order-to-chaos canvas
+     Optimised: spatial grid hash replaces O(n²) neighbor lookup,
+     particle init deferred until section enters viewport.
   ============================================= */
   (function initEntropy() {
     const canvas = document.getElementById('entropyCanvas');
     if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
 
     const size = 500;
     const dpr = window.devicePixelRatio || 1;
@@ -397,14 +414,63 @@
     canvas.height = size * dpr;
     canvas.style.width = size + 'px';
     canvas.style.height = size + 'px';
-    ctx.scale(dpr, dpr);
+    canvas.style.willChange = 'transform';
 
-    // Use site accent blue for particles
     const particleColor = '#3385ff';
-
-    const particles = [];
     const gridSize = 22;
     const spacing = size / gridSize;
+    const NEIGHBOR_RADIUS = 100;
+    const LINK_RADIUS = 50;
+
+    // Spatial grid for O(1) neighbor lookups instead of O(n²)
+    const CELL = NEIGHBOR_RADIUS; // cell size = neighbor radius
+    const gridCols = Math.ceil(size / CELL);
+    const gridRows = Math.ceil(size / CELL);
+
+    let particles = [];
+    let ctx;
+    let time = 0;
+    let running = false;
+    let initialized = false;
+
+    function buildSpatialGrid() {
+      const grid = {};
+      for (let i = 0; i < particles.length; i++) {
+        const p = particles[i];
+        const cx = Math.floor(p.x / CELL);
+        const cy = Math.floor(p.y / CELL);
+        const key = cx + ',' + cy;
+        if (!grid[key]) grid[key] = [];
+        grid[key].push(i);
+      }
+      return grid;
+    }
+
+    function updateNeighbors() {
+      const grid = buildSpatialGrid();
+      for (let i = 0; i < particles.length; i++) {
+        const p = particles[i];
+        p.neighbors = [];
+        const cx = Math.floor(p.x / CELL);
+        const cy = Math.floor(p.y / CELL);
+        // Check only adjacent cells (3x3 neighbourhood)
+        for (let dx = -1; dx <= 1; dx++) {
+          for (let dy = -1; dy <= 1; dy++) {
+            const key = (cx + dx) + ',' + (cy + dy);
+            const cell = grid[key];
+            if (!cell) continue;
+            for (let k = 0; k < cell.length; k++) {
+              const j = cell[k];
+              if (j === i) continue;
+              const n = particles[j];
+              if (Math.hypot(p.x - n.x, p.y - n.y) < NEIGHBOR_RADIUS) {
+                p.neighbors.push(n);
+              }
+            }
+          }
+        }
+      }
+    }
 
     function Particle(x, y, order) {
       this.x = x;
@@ -428,7 +494,7 @@
           var n = this.neighbors[i];
           if (!n.order) {
             var d = Math.hypot(this.x - n.x, this.y - n.y);
-            var s = Math.max(0, 1 - d / 100);
+            var s = Math.max(0, 1 - d / NEIGHBOR_RADIUS);
             cx += n.vx * s;
             cy += n.vy * s;
             this.influence = Math.max(this.influence, s);
@@ -461,29 +527,18 @@
       ctx.fill();
     };
 
-    for (var i = 0; i < gridSize; i++) {
-      for (var j = 0; j < gridSize; j++) {
-        var x = spacing * i + spacing / 2;
-        var y = spacing * j + spacing / 2;
-        particles.push(new Particle(x, y, x >= size / 2));
-      }
-    }
-
-    function updateNeighbors() {
-      for (var i = 0; i < particles.length; i++) {
-        var p = particles[i];
-        p.neighbors = [];
-        for (var j = 0; j < particles.length; j++) {
-          if (i === j) continue;
-          if (Math.hypot(p.x - particles[j].x, p.y - particles[j].y) < 100) {
-            p.neighbors.push(particles[j]);
-          }
+    function initParticles() {
+      ctx = canvas.getContext('2d');
+      ctx.scale(dpr, dpr);
+      for (var i = 0; i < gridSize; i++) {
+        for (var j = 0; j < gridSize; j++) {
+          var x = spacing * i + spacing / 2;
+          var y = spacing * j + spacing / 2;
+          particles.push(new Particle(x, y, x >= size / 2));
         }
       }
+      initialized = true;
     }
-
-    var time = 0;
-    var running = false;
 
     function animate() {
       if (!running) return;
@@ -498,8 +553,8 @@
         for (var j = 0; j < p.neighbors.length; j++) {
           var n = p.neighbors[j];
           var d = Math.hypot(p.x - n.x, p.y - n.y);
-          if (d < 50) {
-            var a = 0.2 * (1 - d / 50);
+          if (d < LINK_RADIUS) {
+            var a = 0.2 * (1 - d / LINK_RADIUS);
             var hex = Math.round(a * 255).toString(16);
             if (hex.length < 2) hex = '0' + hex;
             ctx.strokeStyle = particleColor + hex;
@@ -524,9 +579,10 @@
       requestAnimationFrame(animate);
     }
 
-    // Only run when visible
+    // Defer particle init + animation until section enters viewport
     var entropyObserver = new IntersectionObserver(function (entries) {
       if (entries[0].isIntersecting) {
+        if (!initialized) initParticles();
         if (!running) { running = true; animate(); }
       } else {
         running = false;
