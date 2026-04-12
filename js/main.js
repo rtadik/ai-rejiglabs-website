@@ -42,16 +42,42 @@
   const ease = 'power3.out';
 
   /* =============================================
-     HERO — staggered entrance on load
+     PAGE LOADER — dismiss after 2s, then fire hero
   ============================================= */
-  const heroTl = gsap.timeline({ delay: 0.15 });
-  heroTl
-    .from('.nav', { y: -20, opacity: 0, duration: 0.6, ease })
-    .from('.hero__content .eyebrow', { y: 20, opacity: 0, duration: 0.7, ease }, '-=0.2')
-    .from('.hero__h1', { y: 30, opacity: 0, duration: 0.9, ease }, '-=0.5')
-    .from('.hero__sub', { y: 20, opacity: 0, duration: 0.7, ease }, '-=0.55')
-    .from('.hero .btn', { y: 16, opacity: 0, duration: 0.6, ease }, '-=0.45')
-    .from('.trusted', { opacity: 0, duration: 0.8, ease }, '-=0.2');
+  const pageLoader = document.getElementById('pageLoader');
+  let heroStarted = false;
+
+  function startHero() {
+    if (heroStarted) return;
+    heroStarted = true;
+    const heroTl = gsap.timeline({ delay: 0.1 });
+    heroTl
+      .from('.nav', { y: -20, opacity: 0, duration: 0.6, ease })
+      .from('.hero__content .eyebrow', { y: 20, opacity: 0, duration: 0.7, ease }, '-=0.2')
+      .from('.hero__h1', { y: 30, opacity: 0, duration: 0.9, ease }, '-=0.5')
+      .from('.hero__sub', { y: 20, opacity: 0, duration: 0.7, ease }, '-=0.55')
+      .from('.hero .btn', { y: 16, opacity: 0, duration: 0.6, ease }, '-=0.45')
+      .from('.trusted', { opacity: 0, duration: 0.8, ease }, '-=0.2');
+  }
+
+  if (pageLoader) {
+    // Hide page content until loader exits
+    document.querySelector('.nav').style.opacity = '0';
+    document.querySelector('.hero__content').style.opacity = '0';
+
+    setTimeout(() => {
+      pageLoader.classList.add('loader--exit');
+      pageLoader.addEventListener('animationend', () => {
+        pageLoader.style.display = 'none';
+        // Restore visibility — GSAP will animate from here
+        document.querySelector('.nav').style.opacity = '';
+        document.querySelector('.hero__content').style.opacity = '';
+        startHero();
+      }, { once: true });
+    }, 2000);
+  } else {
+    startHero();
+  }
 
   /* =============================================
      NARRATIVE — sequential stack
